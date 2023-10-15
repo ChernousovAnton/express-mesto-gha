@@ -11,7 +11,7 @@ app.use(express.json());
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
-}).then(() => console.log("Connect to MongoDB"));
+}).then(() => console.log('Connect to MongoDB'));
 
 app.use((req, res, next) => {
   req.user = {
