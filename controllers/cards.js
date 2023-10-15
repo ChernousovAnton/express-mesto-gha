@@ -16,12 +16,11 @@ const doesCardExist = (req, res, next) => {
         res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
         return;
       }
+      next();
     })
     .catch((err) => {
       res.status(500).send({ message: err.message });
-      return;
     });
-  next();
 };
 
 const getCards = (_, res) => {

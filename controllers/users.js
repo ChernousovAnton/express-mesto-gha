@@ -1,29 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/user');
 
-const doesUserIdValid = (req, res, next) => {
-  if (!mongoose.isValidObjectId(req.params.userId)) {
-    res.status(400).send({ message: 'Неверный ID' });
-    return;
-  }
-  next();
-};
-
-const doesUserExist = (req, res, next) => {
-  User.findById(req.params.userId)
-    .then((data) => {
-      if (!data) {
-        res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
-        return;
-      }
-    })
-    .catch((err) => {
-      res.status(500).send({ message: err.message });
-      return;
-    });
-  next();
-};
-
 const getUsers = (_, res) => {
   User.find()
     .then((users) => res.status(200).send({ data: users }))
@@ -31,8 +8,18 @@ const getUsers = (_, res) => {
 };
 
 const getUser = (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.userId)) {
+    res.status(400).send({ message: 'Неверный ID' });
+    return;
+  }
   User.findById(req.params.userId)
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => {
+      if (!user) {
+        res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        return;
+      }
+      res.status(200).send({ data: user });
+    })
     .catch((err) => res.status(500).send({ message: err.message }));
 };
 
@@ -88,11 +75,9 @@ const updateAvatar = (req, res) => {
 };
 
 module.exports = {
-  doesUserExist,
   getUsers,
   getUser,
   createUser,
   updateUser,
   updateAvatar,
-  doesUserIdValid,
 };
