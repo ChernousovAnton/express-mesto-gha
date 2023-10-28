@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const Card = require('../models/card');
+const NotFoundError = require('../errors/not-found-error');
+const BadRequestError = require('../errors/bad-request-error');
+const ForbiddenError = require('../errors/forbidden-error');
 
 const doesCardIdValid = (req, res, next) => {
   if (!mongoose.isValidObjectId(req.params.cardId)) {
-    res.status(400).send({ message: 'Неверный ID' });
-    return;
+    next(new BadRequestError('Неверный ID'));
   }
   next();
 };
@@ -13,41 +15,45 @@ const doesCardExist = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((data) => {
       if (!data) {
-        res.status(404).send({ message: 'Запрашиваемая карточка не найдена' });
-        return;
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
       }
       next();
     })
-    .catch((err) => {
-      res.status(500).send({ message: err.message });
-    });
+    .catch(next);
 };
 
-const getCards = (_, res) => {
+const getCards = (_, res, next) => {
   Card.find()
     .then((cards) => res.status(200).send({ data: cards }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.status(201).send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: err.message });
+        next(new BadRequestError(err.message));
       }
-      return res.status(500).send({ message: err.message });
+      next(err);
     });
 };
 
-const deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .then((card) => res.status(200).send({ data: card }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+const deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
+    .then((card) => {
+      if (!card.owner._id === req.user._id) {
+        throw new ForbiddenError('Нет доступа');
+      }
+      Card.deleteOne(card)
+        .then(() => res.status(200).send({ data: card }))
+        .catch(next);
+    })
+    .catch(next);
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -57,17 +63,17 @@ const likeCard = (req, res) => {
     },
   )
     .then((card) => res.status(200).send({ data: card }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch(next);
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
     .then((card) => res.status(200).send({ data: card }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch(next);
 };
 
 module.exports = {
