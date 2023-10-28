@@ -1,26 +1,7 @@
-const mongoose = require('mongoose');
 const Card = require('../models/card');
 const NotFoundError = require('../errors/not-found-error');
 const BadRequestError = require('../errors/bad-request-error');
 const ForbiddenError = require('../errors/forbidden-error');
-
-const doesCardIdValid = (req, res, next) => {
-  if (!mongoose.isValidObjectId(req.params.cardId)) {
-    next(new BadRequestError('Неверный ID'));
-  }
-  next();
-};
-
-const doesCardExist = (req, res, next) => {
-  Card.findById(req.params.cardId)
-    .then((data) => {
-      if (!data) {
-        throw new NotFoundError('Запрашиваемая карточка не найдена');
-      }
-      next();
-    })
-    .catch(next);
-};
 
 const getCards = (_, res, next) => {
   Card.find()
@@ -43,6 +24,9 @@ const createCard = (req, res, next) => {
 const deleteCard = (req, res, next) => {
   Card.findById(req.params.cardId)
     .then((card) => {
+      if (!card) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
+      }
       if (!card.owner._id === req.user._id) {
         throw new ForbiddenError('Нет доступа');
       }
@@ -62,7 +46,12 @@ const likeCard = (req, res, next) => {
       runValidators: true,
     },
   )
-    .then((card) => res.status(200).send({ data: card }))
+    .then((card) => {
+      if (!card) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
+      }
+      res.status(200).send({ data: card });
+    })
     .catch(next);
 };
 
@@ -72,7 +61,12 @@ const dislikeCard = (req, res, next) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .then((card) => res.status(200).send({ data: card }))
+    .then((card) => {
+      if (!card) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
+      }
+      res.status(200).send({ data: card });
+    })
     .catch(next);
 };
 
@@ -82,6 +76,4 @@ module.exports = {
   deleteCard,
   likeCard,
   dislikeCard,
-  doesCardExist,
-  doesCardIdValid,
 };
