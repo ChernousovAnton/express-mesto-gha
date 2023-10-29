@@ -15,8 +15,7 @@ router.post(
         avatar: Joi.string().pattern(urlValidator),
         email: Joi.string().required().email(),
         password: Joi.string().required().min(2),
-      })
-      .unknown(true),
+      }),
   }),
   createUser,
 );

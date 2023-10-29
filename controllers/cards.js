@@ -5,7 +5,7 @@ const ForbiddenError = require('../errors/forbidden-error');
 
 const getCards = (_, res, next) => {
   Card.find()
-    .then((cards) => res.status(200).send({ data: cards }))
+    .then((cards) => res.send({ data: cards }))
     .catch(next);
 };
 
@@ -16,8 +16,9 @@ const createCard = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError(err.message));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -31,7 +32,7 @@ const deleteCard = (req, res, next) => {
         throw new ForbiddenError('Нет доступа');
       }
       Card.deleteOne(card)
-        .then(() => res.status(200).send({ data: card }))
+        .then(() => res.send({ data: card }))
         .catch(next);
     })
     .catch(next);
@@ -50,7 +51,7 @@ const likeCard = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Запрашиваемая карточка не найдена');
       }
-      res.status(200).send({ data: card });
+      res.send({ data: card });
     })
     .catch(next);
 };
@@ -65,7 +66,7 @@ const dislikeCard = (req, res, next) => {
       if (!card) {
         throw new NotFoundError('Запрашиваемая карточка не найдена');
       }
-      res.status(200).send({ data: card });
+      res.send({ data: card });
     })
     .catch(next);
 };

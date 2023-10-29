@@ -8,7 +8,7 @@ const UnauthorizedError = require('../errors/unauthorized-error');
 
 const getUsers = (_, res, next) => {
   User.find()
-    .then((users) => res.status(200).send({ data: users }))
+    .then((users) => res.send({ data: users }))
     .catch(next);
 };
 
@@ -18,7 +18,7 @@ const getUser = (req, res, next) => {
       if (!user) {
         throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
-      res.status(200).send({ data: user });
+      res.send({ data: user });
     })
     .catch(next);
 };
@@ -41,11 +41,11 @@ const createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 11000) {
         next(new ConflictError('Пользователь с таким Email уже зарегистрирован'));
-      }
-      if (err.name === 'ValidationError') {
+      } else if (err.name === 'ValidationError') {
         next(new BadRequestError(err.message));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -59,12 +59,13 @@ const updateUser = (req, res, next) => {
       runValidators: true,
     },
   )
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError(err.message));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -78,12 +79,13 @@ const updateAvatar = (req, res, next) => {
       runValidators: true,
     },
   )
-    .then((user) => res.status(200).send({ data: user }))
+    .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequestError(err.message));
+      } else {
+        next(err);
       }
-      next(err);
     });
 };
 
@@ -96,16 +98,14 @@ const login = (req, res, next) => {
         'some-secret-key',
         { expiresIn: '7d' },
       );
-      res.status(200).send({ token });
+      res.send({ token });
     })
-    .catch((err) => {
-      next(new UnauthorizedError(err.message));
-    });
+    .catch(next);
 };
 
 const getMeUser = (req, res, next) => {
   User.findById(req.user._id)
-    .then((user) => res.status(200).send(user))
+    .then((user) => res.send(user))
     .catch(next);
 };
 
