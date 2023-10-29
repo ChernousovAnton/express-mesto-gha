@@ -4,7 +4,6 @@ const User = require('../models/user');
 const NotFoundError = require('../errors/not-found-error');
 const BadRequestError = require('../errors/bad-request-error');
 const ConflictError = require('../errors/conflict-error');
-const UnauthorizedError = require('../errors/unauthorized-error');
 
 const getUsers = (_, res, next) => {
   User.find()
